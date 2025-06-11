@@ -1,10 +1,25 @@
 "use client";
+
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import { categories } from "@/lib/mockData";
+import { useCategories } from "@/hooks/useCategories";
 import Image from "next/image";
 
 export default function Categories() {
+  const { categories, loading } = useCategories();
+
+  if (loading) {
+    return (
+      <div className="px-4 py-6 text-gray-500 text-center">Загрузка категорий...</div>
+    );
+  }
+
+  if (!categories || categories.length === 0) {
+    return (
+      <div className="px-4 py-6 text-gray-400 text-center">Категории не найдены.</div>
+    );
+  }
+
   return (
     <section className="max-w-[1400px] mx-auto w-full px-2 xs:px-4 sm:px-6 md:px-10 xl:px-20 mt-2 mb-7 sm:mb-10">
       <h2 className="text-xl xs:text-2xl font-bold mb-5 sm:mb-6 text-gray-900 flex items-center gap-2">
@@ -34,12 +49,13 @@ export default function Categories() {
             "
           >
             <Image
-              src={`/cat-${cat.slug}.png`}
+              src={cat.image || `/cat-${cat.slug}.png`}
               alt={cat.name}
-              width={56} // sm:w-14 = 56px
+              width={56}
               height={56}
               className="w-10 h-10 xs:w-12 sm:w-14 xs:h-14 object-contain"
-            />            <span className="text-xs xs:text-base font-semibold text-gray-900 text-center truncate max-w-[90px]">
+            />
+            <span className="text-xs xs:text-base font-semibold text-gray-900 text-center truncate max-w-[90px]">
               {cat.name}
             </span>
           </Link>
