@@ -1,6 +1,4 @@
-// eslint.config.mjs
 import eslintPluginTailwind from "eslint-plugin-tailwindcss";
-import prettierPluginRecommended from "eslint-plugin-prettier/recommended"; // не обязательно импортировать — можно просто подключить через extends
 
 export default [
   {
@@ -10,7 +8,7 @@ export default [
     },
     languageOptions: {
       parserOptions: {
-        project: "./tsconfig.json", // если используешь строгую типизацию
+        project: "./tsconfig.json",
         ecmaVersion: "latest",
         sourceType: "module",
       },
@@ -18,7 +16,7 @@ export default [
     settings: {
       tailwindcss: {
         callees: ["clsx", "classnames", "cva"],
-        config: "tailwind.config.js",
+        config: "tailwind.config.ts", // если у тебя TypeScript
       },
     },
     extends: [
@@ -26,11 +24,11 @@ export default [
       "next",
       "next/core-web-vitals",
       "plugin:tailwindcss/recommended",
-      "plugin:prettier/recommended", // обязательно последним — чтобы Prettier перекрывал конфликты
+      "plugin:prettier/recommended"
     ],
     rules: {
       "tailwindcss/classnames-order": "warn",
-      "tailwindcss/no-custom-classname": "off",
-    },
-  },
+      "tailwindcss/no-custom-classname": "off"
+    }
+  }
 ];
