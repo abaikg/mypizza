@@ -27,7 +27,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const clear = useCart((state) => state.clearCart);
 
   const total = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
+    (sum, item) => sum + Number(item.variant.price ?? item.product.price) * item.quantity,
     0
   );
 
@@ -38,6 +38,28 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [open, onClose]);
+
+  // Функция для отправки заказа в WhatsApp
+  const sendOrderToWhatsApp = () => {
+    const phone = "996779715638"; // Твой номер без "+"
+    const message = encodeURIComponent(
+      `🛒 Новый заказ:\n\n` +
+        items
+          .map(
+            (item) =>
+              `${item.product.name} x${item.quantity} (${Number(item.variant.price ?? item.product.price)} c)` +
+              (item.options && Object.values(item.options).length
+                ? ` [${Object.values(item.options).join(", ")}]`
+                : "")
+          )
+          .join("\n") +
+        `\n\nИтого: ${total} c`
+    );
+    const waUrl = `https://wa.me/${phone}?text=${message}`;
+    window.open(waUrl, "_blank");
+    clear();
+    onClose();
+  };
 
   return (
     <AnimatePresence>
@@ -120,14 +142,19 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                         }}
                         className="flex gap-3 sm:gap-4 border-b pb-4 last:border-none last:pb-0 group"
                       >
-                        <Image
-                          src={item.product.image}
-                          alt={item.product.name}
-                          width={64} // = 16 * 4 (Tailwind sm:w-16)
-                          height={64}
-                          className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl object-cover shadow"
-                          style={{ maxWidth: "100%", height: "auto" }}
-                        />
+                        {/* КРАСИВЫЙ КВАДРАТНЫЙ БЛОК ПОД КАРТИНКУ */}
+                        <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50 shadow">
+                          <Image
+                            src={item.product.image}
+                            alt={item.product.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                            quality={80}
+                          />
+                        </div>
+
+                        {/* Основной контент */}
                         <div className="flex-1 flex flex-col justify-between">
                           <div>
                             <div className="font-semibold text-base">
@@ -161,7 +188,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                         </div>
                         <div className="flex flex-col items-end justify-between">
                           <div className="font-bold text-base">
-                            {(Number(item.variant.price ?? item.product.price) * item.quantity)} c
+                            {Number(item.variant.price ?? item.product.price) * item.quantity} c
                           </div>
                           <button
                             onClick={() => removeItem(item.id)}
@@ -187,11 +214,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
               <button
                 className="w-full bg-pink-500 hover:bg-pink-600 text-white rounded-full py-3 font-bold text-base transition disabled:opacity-70"
                 disabled={items.length === 0}
-                onClick={() => {
-                  alert("Чек отправлен на печать!");
-                  clear();
-                  onClose();
-                }}
+                onClick={sendOrderToWhatsApp}
               >
                 Оформить заказ
               </button>

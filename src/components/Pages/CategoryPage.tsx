@@ -24,17 +24,16 @@ export default function CategoryPage({ category }: Props) {
 
   const filtered = useMemo(() => {
     if (!cat) return [];
-    return products.filter((p) => String(p.category) === String(cat.id));
+    return products.filter((p) => String(p.category) === String(cat.slug) || String(p.category) === String(cat.id));
   }, [products, cat]);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const isLoading = loadingCategories || loadingProducts;
 
   return (
-    <div className="container  mx-auto px-2 py-10 max-w-7xl">
+    <div className="container mx-auto px-2 py-10 max-w-7xl">
       <CategoryNav />
-
-      <h1 className=" pt-[60px] text-2xl font-extrabold mb-6 tracking-tight text-gray-900">
+      <h1 className="pt-[60px] text-2xl font-extrabold mb-6 tracking-tight text-gray-900">
         {cat?.name}
       </h1>
 

@@ -1,11 +1,11 @@
-import { use } from "react";
-import { notFound } from "next/navigation";
 import CategoryPage from "@/components/Pages/CategoryPage";
+import { notFound } from "next/navigation";
 
-export default function CategoryWrapper({ params }: { params: Promise<{ category: string }> }) {
-  const { category } = use(params); 
+interface Props {
+  params: { category: string };
+}
 
-  if (!category) return notFound();
-
-  return <CategoryPage category={category} />;
+export default function CategoryWrapper({ params }: Props) {
+  if (!params?.category) return notFound();
+  return <CategoryPage category={params.category} />;
 }
