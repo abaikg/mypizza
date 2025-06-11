@@ -1,12 +1,9 @@
+import { use } from "react";
 import { notFound } from "next/navigation";
-import CategoryPage from "@/components/Pages/CategoryPage"; // 👈 создадим клиентский
+import CategoryPage from "@/components/Pages/CategoryPage";
 
-interface CategoryWrapperProps {
-  params: { category: string };
-}
-
-export default function CategoryWrapper({ params }: CategoryWrapperProps) {
-  const { category } = params;
+export default function CategoryWrapper({ params }: { params: Promise<{ category: string }> }) {
+  const { category } = use(params); 
 
   if (!category) return notFound();
 
