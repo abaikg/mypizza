@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "framer-motion";
+
 import Image from "next/image";
 import Link from "next/link";
 
@@ -20,10 +20,7 @@ export default function Hero() {
     >
       {/* TEXT BLOCK */}
       <div className="flex-1 w-full flex flex-col items-start">
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, type: "spring" }}
+        <h1
           className="
             text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold
             mb-2 xs:mb-4 sm:mb-6 text-pink-500 leading-tight
@@ -31,14 +28,18 @@ export default function Hero() {
             text-left
           "
         >
-          Вкуснейшая доставка <span className="text-black font-bold">до двери</span>
-        </motion.h1>
+          Вкуснейшая доставка{" "}
+          <span className="text-black font-bold">до двери</span>
+        </h1>
+
         <p className="mb-4 xs:mb-6 text-base xs:text-lg text-gray-500 w-full max-w-[420px] text-left">
           Пицца, роллы, десерты и напитки
         </p>
+
         <p className="mb-5 text-gray-700 text-sm xs:text-base w-full max-w-[420px] text-left">
           Готовим быстро, доставляем с заботой, работаем каждый день.
         </p>
+
         <Link
           href="/menu"
           className="
@@ -51,22 +52,18 @@ export default function Hero() {
           Посмотреть меню
         </Link>
       </div>
+
       {/* IMAGE BLOCK */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.85 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.4, duration: 0.8, type: "spring" }}
-        className="flex-1 w-full flex items-center justify-center mb-4 xs:mb-0"
-      >
+      <div className="flex-1 w-full flex items-center justify-center mb-4 xs:mb-0">
         <Image
           src="/pizza.png"
           alt="Пицца"
           width={420}
           height={420}
-          priority // т.к. loading="eager"
+          priority
           className="w-52 xs:w-60 sm:w-72 md:w-80 lg:w-[340px] xl:w-[420px] mt-9 sm:mt-8 mb-4 max-w-full h-auto object-contain drop-shadow-2xl"
         />
-      </motion.div>
+      </div>
     </section>
   );
 }

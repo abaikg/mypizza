@@ -28,7 +28,6 @@ export default function Footer() {
 
         {/* Центральный блок — меню */}
         <nav className="flex flex-col gap-2 sm:gap-3">
-          <span className="font-semibold text-gray-900 mb-1">Меню</span>
           <Link href="/menu" className="hover:text-pink-500 transition">Меню</Link>
           <Link href="/contacts" className="hover:text-pink-500 transition">Контакты</Link>
           <Link href="/delivery" className="hover:text-pink-500 transition">Доставка</Link>

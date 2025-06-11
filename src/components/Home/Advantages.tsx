@@ -1,5 +1,4 @@
 "use client";
-import { motion } from "framer-motion";
 import { ShoppingBag, Users, Award } from "lucide-react";
 
 const advantages = [
@@ -37,13 +36,9 @@ export default function Advantages() {
           justify-center
         "
       >
-        {advantages.map((adv, i) => (
-          <motion.div
+        {advantages.map((adv) => (
+          <div
             key={adv.label}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.14, duration: 0.6, type: "spring" }}
             className={`
               w-full 
               flex flex-col items-center justify-center
@@ -58,8 +53,10 @@ export default function Advantages() {
             <div className="text-2xl xs:text-3xl font-bold text-pink-500 group-hover:scale-105 transition">
               {adv.value}
             </div>
-            <div className="text-gray-700 text-xs xs:text-base mt-1 text-center">{adv.label}</div>
-          </motion.div>
+            <div className="text-gray-700 text-xs xs:text-base mt-1 text-center">
+              {adv.label}
+            </div>
+          </div>
         ))}
       </div>
     </section>

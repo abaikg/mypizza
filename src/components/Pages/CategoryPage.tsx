@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useCategories } from "@/hooks/useCategories";
 import { useProducts } from "@/hooks/useProducts";
 import ProductCard from "@/components/Products/ProductCard";
 import ProductModal from "@/components/Products/ProductModal";
 import CategoryNav from "@/components/Categories/CategoryNav";
+import SkeletonCard from "@/components/Skeleton/SkeletonCard";
 import type { Product } from "@/types/product";
 
 interface Props {
@@ -28,67 +28,47 @@ export default function CategoryPage({ category }: Props) {
   }, [products, cat]);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-
-  if (loadingCategories || loadingProducts) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-pink-400 mb-4" />
-        <div className="text-center text-gray-400 text-lg">Загрузка...</div>
-      </div>
-    );
-  }
-
-  if (!cat) return null;
+  const isLoading = loadingCategories || loadingProducts;
 
   return (
-    <div className="container mx-auto px-2 py-2 max-w-7xl">
+    <div className="container  mx-auto px-2 py-10 max-w-7xl">
       <CategoryNav />
 
-      <motion.h1
-        className="text-3xl font-extrabold mb-6 tracking-tight text-gray-900"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        {cat.name}
-      </motion.h1>
+      <h1 className=" pt-[60px] text-2xl font-extrabold mb-6 tracking-tight text-gray-900">
+        {cat?.name}
+      </h1>
 
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center mt-14 mb-16">
+      {isLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+          {Array.from({ length: 8 }).map((_, idx) => (
+            <SkeletonCard key={idx} />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
           <span className="text-6xl mb-4">🛒</span>
-          <div className="text-lg text-gray-400 font-semibold">
+          <div className="text-lg text-gray-400 font-semibold text-center">
             В этой категории пока нет товаров
           </div>
         </div>
       ) : (
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={category}
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0.1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {filtered.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onClick={() => setSelectedProduct(product)}
-              />
-            ))}
-          </motion.div>
-        </AnimatePresence>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+          {filtered.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onClick={() => setSelectedProduct(product)}
+            />
+          ))}
+        </div>
       )}
 
-      <AnimatePresence>
-        {selectedProduct && (
-          <ProductModal
-            product={selectedProduct}
-            onClose={() => setSelectedProduct(null)}
-          />
-        )}
-      </AnimatePresence>
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 }
