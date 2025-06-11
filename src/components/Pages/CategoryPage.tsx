@@ -24,7 +24,11 @@ export default function CategoryPage({ category }: Props) {
 
   const filtered = useMemo(() => {
     if (!cat) return [];
-    return products.filter((p) => String(p.category) === String(cat.slug) || String(p.category) === String(cat.id));
+    return products.filter(
+      (p) =>
+        String(p.category) === String(cat.slug) ||
+        String(p.category) === String(cat.id)
+    );
   }, [products, cat]);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);

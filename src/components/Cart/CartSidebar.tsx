@@ -41,20 +41,44 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
   // Функция для отправки заказа в WhatsApp
   const sendOrderToWhatsApp = () => {
-    const phone = "996779715638"; // Твой номер без "+"
+    const phone = "996779715638";
+
     const message = encodeURIComponent(
-      `🛒 Новый заказ:\n\n` +
-        items
-          .map(
-            (item) =>
-              `${item.product.name} x${item.quantity} (${Number(item.variant.price ?? item.product.price)} c)` +
-              (item.options && Object.values(item.options).length
-                ? ` [${Object.values(item.options).join(", ")}]`
-                : "")
-          )
-          .join("\n") +
-        `\n\nИтого: ${total} c`
+      [
+        "🛒 Новый заказ:\n",
+        ...items.map((item) => {
+          const name = item.product.name;
+          const qty = item.quantity;
+          const price = Number(item.variant.price ?? item.product.price);
+          const totalItemPrice = qty * price;
+
+          const emoji = /pizza|пицца|маргарита|пеперони/i.test(name)
+            ? "🍕"
+            : "🥤";
+
+          // читаемый вывод опций
+          const optionsString = item.product.options
+            ?.map((opt) => {
+              const valId = item.options[opt.id];
+              const val = item.variant.optionValues.find(
+                (v) => String(v.id) === String(valId)
+              );
+              return val ? `${opt.name}: ${val.value}` : null;
+            })
+            .filter(Boolean)
+            .join(", ");
+
+          return (
+            `${emoji} ${name}\n` +
+            `  • Кол-во: ${qty}\n` +
+            `  • Цена: ${totalItemPrice} c` +
+            (optionsString ? `\n  • Опции: ${optionsString}` : "")
+          );
+        }),
+        `\n💰 Итого: ${total} c`,
+      ].join("\n\n")
     );
+
     const waUrl = `https://wa.me/${phone}?text=${message}`;
     window.open(waUrl, "_blank");
     clear();
