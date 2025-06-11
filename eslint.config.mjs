@@ -1,33 +1,22 @@
+// eslint.config.mjs
 import eslintPluginTailwind from "eslint-plugin-tailwindcss";
-import next from "eslint-config-next";
-import globals from "globals";
+import pluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 
 export default [
   {
-    name: "base",
-    files: ["**/*.{ts,tsx,js,jsx}"],
-    languageOptions: {
-      parserOptions: {
-        ecmaVersion: "latest",
-        sourceType: "module",
-        project: "./tsconfig.json",
-      },
-      globals: {
-        ...globals.browser,
-        ...globals.node,
-      },
-    },
     plugins: {
       tailwindcss: eslintPluginTailwind,
     },
+    extends: [
+      "next",
+      "next/core-web-vitals",
+      "eslint:recommended",
+      "plugin:tailwindcss/recommended",
+      "plugin:prettier/recommended"
+    ],
     rules: {
-      ...next.rules,
+      "tailwindcss/classnames-order": "warn",
       "tailwindcss/no-custom-classname": "off",
     },
-  },
-  {
-    name: "nextjs",
-    files: ["**/*.{ts,tsx}"],
-    ...next,
   },
 ];
