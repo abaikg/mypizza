@@ -3,15 +3,19 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["localhost"],
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "supportive-connection-48c9c03e13.strapiapp.com",
+        pathname: "/uploads/**",
+      },
       {
         protocol: "http",
         hostname: "localhost",
         port: "1337",
         pathname: "/uploads/**",
       },
-    ],
+    ]
   },
 
   webpack: (config) => {
