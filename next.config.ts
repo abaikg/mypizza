@@ -1,19 +1,22 @@
+import path from "path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // domains — если тебе нужно только http://localhost:1337
-    domains: ['localhost'],
-
-    // remotePatterns — более гибко, если нужен порт/путь (лучший вариант для dev!)
+    domains: ["localhost"],
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '1337',
-        pathname: '/uploads/**',
+        protocol: "http",
+        hostname: "localhost",
+        port: "1337",
+        pathname: "/uploads/**",
       },
     ],
+  },
+
+  webpack: (config) => {
+    config.resolve.alias["@"] = path.resolve(__dirname, "src");
+    return config;
   },
 };
 
