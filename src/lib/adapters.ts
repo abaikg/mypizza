@@ -11,17 +11,24 @@ import {
 // Получить абсолютный URL из Strapi image
 function getImageUrlFromArray(images?: StrapiImage[]): string {
   if (!images?.length) return "";
-  const img = images[0];
-  const base = (process.env.NEXT_PUBLIC_API_URL || "https://supportive-connection-48c9c03e13.strapiapp.com/api").replace(/\/api$/, "");
 
-  return (
-    img.formats?.small?.url
-      || img.formats?.thumbnail?.url
-      || img.url
-      ? `${base}${img.formats?.small?.url || img.formats?.thumbnail?.url || img.url}`
-      : ""
-  );
+  const img = images[0];
+  const url =
+    img.formats?.small?.url ||
+    img.formats?.thumbnail?.url ||
+    img.url;
+
+  if (!url) return "";
+
+  // ✅ Если уже абсолютный — не трогаем
+  if (url.startsWith("http")) return url;
+
+  // ✅ Если относительный — приклеиваем домен
+  const base = (process.env.NEXT_PUBLIC_API_URL || "https://supportive-connection-48c9c03e13.strapiapp.com/api").replace(/\/api$/, "");
+  return `${base}${url}`;
 }
+
+
 
 // Парсим rich-text: возвращаем plain-text (первый параграф)
 function parseDescription(desc: RichTextBlock[]): string {
@@ -93,10 +100,16 @@ export function adaptProduct(raw: ProductRaw): Product {
 export function adaptCategory(raw: CategoryRaw): Category {
   const getImageUrl = (img?: StrapiImage): string => {
     if (!img) return "";
+
+    const url = img.formats?.small?.url || img.formats?.thumbnail?.url || img.url;
+
+    if (!url) return "";
+
+    // ✅ если уже абсолютный URL
+    if (url.startsWith("http")) return url;
+
     const base = (process.env.NEXT_PUBLIC_API_URL || "https://supportive-connection-48c9c03e13.strapiapp.com/api").replace(/\/api$/, "");
-    return img.formats?.small?.url || img.formats?.thumbnail?.url || img.url
-      ? `${base}${img.formats?.small?.url || img.formats?.thumbnail?.url || img.url}`
-      : "";
+    return `${base}${url}`;
   };
 
   return {

@@ -6,19 +6,17 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "supportive-connection-48c9c03e13.strapiapp.com",
-        pathname: "/uploads/**",
+        hostname: "supportive-connection-48c9c03e13.media.strapiapp.com",
+        pathname: "/**",
       },
       {
         protocol: "http",
         hostname: "localhost",
         port: "1337",
-        pathname: "/uploads/**",
+        pathname: "/**",
       },
-    ]
-  },
-
-  webpack: (config) => {
+    ],
+  }, webpack: (config) => {
     config.resolve.alias["@"] = path.resolve(__dirname, "src");
     return config;
   },
