@@ -12,7 +12,7 @@ import {
 function getImageUrlFromArray(images?: StrapiImage[]): string {
   if (!images?.length) return "";
   const img = images[0];
-  const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337/api").replace(/\/api$/, "");
+  const base = (process.env.NEXT_PUBLIC_API_URL || "https://supportive-connection-48c9c03e13.strapiapp.com/api").replace(/\/api$/, "");
 
   return (
     img.formats?.small?.url
@@ -93,7 +93,7 @@ export function adaptProduct(raw: ProductRaw): Product {
 export function adaptCategory(raw: CategoryRaw): Category {
   const getImageUrl = (img?: StrapiImage): string => {
     if (!img) return "";
-    const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337/api").replace(/\/api$/, "");
+    const base = (process.env.NEXT_PUBLIC_API_URL || "https://supportive-connection-48c9c03e13.strapiapp.com/api").replace(/\/api$/, "");
     return img.formats?.small?.url || img.formats?.thumbnail?.url || img.url
       ? `${base}${img.formats?.small?.url || img.formats?.thumbnail?.url || img.url}`
       : "";

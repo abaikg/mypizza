@@ -5,8 +5,8 @@ import Footer from "@/components/Footer";
 
 
 export const metadata: Metadata = {
-  title: "Menu",
-  description: "menu",
+  title: "Доставка пиццы",
+  description: "Самая вкусная пицца в городе",
 };
 
 export default function RootLayout({
