@@ -45,42 +45,45 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
     const message = encodeURIComponent(
       [
-        "🛒 Новый заказ:\n",
-        ...items.map((item) => {
+        "🧾 *Ваш заказ:*\n",
+        ...items.map((item, index) => {
           const name = item.product.name;
           const qty = item.quantity;
           const price = Number(item.variant.price ?? item.product.price);
           const totalItemPrice = qty * price;
 
-          const emoji = /pizza|пицца|маргарита|пеперони/i.test(name)
-            ? "🍕"
-            : "🥤";
+          // 🔤 Определение emoji по ключевым словам
+          const emoji =
+            /пицц|маргарита|пеперони/i.test(name) ? "🍕" :
+              /чай|ice|лимонад|cola|пепси|сок/i.test(name) ? "🧃" :
+                /картошка|фри/i.test(name) ? "🍟" :
+                  /бургер/i.test(name) ? "🍔" :
+                    /торт|десерт|мороженое/i.test(name) ? "🍰" :
+                      "🥤";
 
-          // читаемый вывод опций
-          const optionsString = item.product.options
-            ?.map((opt) => {
-              const valId = item.options[opt.id];
-              const val = item.variant.optionValues.find(
-                (v) => String(v.id) === String(valId)
-              );
-              return val ? `${opt.name}: ${val.value}` : null;
-            })
-            .filter(Boolean)
-            .join(", ");
+          // Опции: "Размер: 30 см, Объем: 0.5 л"
+          const options = item.product.options?.map((opt) => {
+            const valId = item.options[opt.id];
+            const val = item.variant.optionValues.find(
+              (v) => String(v.id) === String(valId)
+            );
+            return val ? `${opt.name}: ${val.value}` : null;
+          }).filter(Boolean).join(", ");
 
           return (
-            `${emoji} ${name}\n` +
-            `  • Кол-во: ${qty}\n` +
-            `  • Цена: ${totalItemPrice} c` +
-            (optionsString ? `\n  • Опции: ${optionsString}` : "")
+            `*${index + 1}. ${emoji} ${name}*\n` +
+            `   • Кол-во: ${qty}\n` +
+            `   • Цена: ${totalItemPrice} c` +
+            (options ? `\n   • Опции: ${options}` : "")
           );
         }),
-        `\n💰 Итого: ${total} c`,
+        "━━━━━━━━━━━━━━━",
+        `*💰 Итого: ${total} c*`,
       ].join("\n\n")
     );
 
-    const waUrl = `https://wa.me/${phone}?text=${message}`;
-    window.open(waUrl, "_blank");
+    const url = `https://wa.me/${phone}?text=${message}`;
+    window.open(url, "_blank");
     clear();
     onClose();
   };
