@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useCart } from "@/hooks/useCart";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +11,6 @@ import {
   ShoppingBag,
   ShoppingCart,
 } from "lucide-react";
-import { useEffect } from "react";
 import CartItemOptions from "@/components/Cart/CartItemOptions";
 import Image from "next/image";
 
@@ -26,12 +26,19 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const decrement = useCart((state) => state.decrementItem);
   const clear = useCart((state) => state.clearCart);
 
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [payment, setPayment] = useState<"qr" | "cash">("qr");
+
   const total = items.reduce(
-    (sum, item) => sum + Number(item.variant.price ?? item.product.price) * item.quantity,
+    (sum, item) =>
+      sum + Number(item.variant.price ?? item.product.price) * item.quantity,
     0
   );
 
-  // Закрытие по Esc
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
   useEffect(() => {
     if (!open) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -39,9 +46,18 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     return () => window.removeEventListener("keydown", esc);
   }, [open, onClose]);
 
-  // Функция для отправки заказа в WhatsApp
   const sendOrderToWhatsApp = () => {
-    const phone = "996779715638";
+    if (!name || !phone || !address) {
+      alert("Пожалуйста, заполните имя, телефон и адрес.");
+      return;
+    }
+
+    if (total < 500) {
+      alert("Минимальная сумма заказа — 500 сом.");
+      return;
+    }
+
+    const phoneNumber = "996779715638";
 
     const message = encodeURIComponent(
       [
@@ -52,23 +68,29 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
           const price = Number(item.variant.price ?? item.product.price);
           const totalItemPrice = qty * price;
 
-          // 🔤 Определение emoji по ключевым словам
           const emoji =
-            /пицц|маргарита|пеперони/i.test(name) ? "🍕" :
-              /чай|ice|лимонад|cola|пепси|сок/i.test(name) ? "🧃" :
-                /картошка|фри/i.test(name) ? "🍟" :
-                  /бургер/i.test(name) ? "🍔" :
-                    /торт|десерт|мороженое/i.test(name) ? "🍰" :
-                      "🥤";
+            /пицц|маргарита|пеперони/i.test(name)
+              ? "🍕"
+              : /чай|ice|лимонад|cola|пепси|сок/i.test(name)
+              ? "🧃"
+              : /картошка|фри/i.test(name)
+              ? "🍟"
+              : /бургер/i.test(name)
+              ? "🍔"
+              : /торт|десерт|мороженое/i.test(name)
+              ? "🍰"
+              : "🥤";
 
-          // Опции: "Размер: 30 см, Объем: 0.5 л"
-          const options = item.product.options?.map((opt) => {
-            const valId = item.options[opt.id];
-            const val = item.variant.optionValues.find(
-              (v) => String(v.id) === String(valId)
-            );
-            return val ? `${opt.name}: ${val.value}` : null;
-          }).filter(Boolean).join(", ");
+          const options = item.product.options
+            ?.map((opt) => {
+              const valId = item.options[opt.id];
+              const val = item.variant.optionValues.find(
+                (v) => String(v.id) === String(valId)
+              );
+              return val ? `${opt.name}: ${val.value}` : null;
+            })
+            .filter(Boolean)
+            .join(", ");
 
           return (
             `*${index + 1}. ${emoji} ${name}*\n` +
@@ -79,11 +101,21 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
         }),
         "━━━━━━━━━━━━━━━",
         `*💰 Итого: ${total} c*`,
+        `*📦 Всего товаров:* ${totalQuantity}`,
+        "",
+        "━━━━━━━━━━━━━━━",
+        `*👤 Имя:* ${name}`,
+        `*📞 Телефон:* ${phone}`,
+        `*🏠 Адрес доставки:* ${address}`,
+        `*💳 Оплата:* ${
+          payment === "qr" ? "QR-код" : "Наличными"
+        }`,
       ].join("\n\n")
     );
 
-    const url = `https://wa.me/${phone}?text=${message}`;
+    const url = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(url, "_blank");
+
     clear();
     onClose();
   };
@@ -92,7 +124,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     <AnimatePresence>
       {open && (
         <>
-          {/* Overlay */}
           <motion.div
             className="fixed inset-0 bg-black/40 z-40 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -101,14 +132,8 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             transition={{ duration: 0.13 }}
             onClick={onClose}
           />
-          {/* Cart sidebar */}
           <motion.aside
-            className="
-              fixed right-0 top-0 h-full bg-white z-50 shadow-2xl flex flex-col
-              w-full max-w-[95vw] sm:max-w-[430px] md:max-w-md
-              rounded-none md:rounded-l-2xl
-              transition-all font-montserrat
-            "
+            className="fixed right-0 top-0 h-full bg-white z-50 shadow-2xl flex flex-col w-full max-w-[95vw] sm:max-w-[430px] md:max-w-md rounded-none md:rounded-l-2xl transition-all font-montserrat"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -116,15 +141,10 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div
-              className="
-                flex items-center justify-between p-4 sm:p-5 border-b
-                bg-white/80 backdrop-blur sticky top-0 z-10
-                min-h-[60px]
-              "
-            >
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b bg-white/80 backdrop-blur sticky top-0 z-10 min-h-[60px]">
               <div className="flex items-center gap-2 font-bold text-xl sm:text-2xl">
-                <ShoppingBag className="w-7 h-7 text-pink-500" /> Корзина
+                <ShoppingBag className="w-7 h-7 text-pink-500" />
+                Корзина
               </div>
               <button
                 onClick={onClose}
@@ -169,7 +189,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                         }}
                         className="flex gap-3 sm:gap-4 border-b pb-4 last:border-none last:pb-0 group"
                       >
-                        {/* КРАСИВЫЙ КВАДРАТНЫЙ БЛОК ПОД КАРТИНКУ */}
                         <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50 shadow">
                           <Image
                             src={item.product.image}
@@ -180,8 +199,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             quality={80}
                           />
                         </div>
-
-                        {/* Основной контент */}
                         <div className="flex-1 flex flex-col justify-between">
                           <div>
                             <div className="font-semibold text-base">
@@ -197,7 +214,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             <button
                               className="px-2 py-1 bg-pink-100 text-pink-600 rounded-xl hover:bg-pink-200 transition"
                               onClick={() => decrement(item.id)}
-                              aria-label="Уменьшить количество"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
@@ -207,7 +223,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             <button
                               className="px-2 py-1 bg-pink-100 text-pink-600 rounded-xl hover:bg-pink-200 transition"
                               onClick={() => increment(item.id)}
-                              aria-label="Увеличить количество"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -220,7 +235,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                           <button
                             onClick={() => removeItem(item.id)}
                             className="text-xs text-red-400 hover:text-red-600 mt-2 transition flex items-center gap-1 group-hover:scale-110"
-                            aria-label="Удалить товар"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -234,13 +248,69 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
             {/* Footer */}
             <div className="p-4 sm:p-5 border-t bg-white/90 backdrop-blur sticky bottom-0 z-10">
+              {items.length > 0 && (
+                <>
+                  <div className="space-y-3 mb-4">
+                    <input
+                      type="text"
+                      placeholder="Ваше имя"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Телефон"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Адрес доставки"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPayment("qr")}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium border ${
+                          payment === "qr"
+                            ? "bg-pink-500 text-white border-pink-500"
+                            : "bg-white text-gray-600"
+                        }`}
+                      >
+                        QR-код
+                      </button>
+                      <button
+                        onClick={() => setPayment("cash")}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium border ${
+                          payment === "cash"
+                            ? "bg-pink-500 text-white border-pink-500"
+                            : "bg-white text-gray-600"
+                        }`}
+                      >
+                        Наличные
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
+                    <span>Всего товаров:</span>
+                    <span>{totalQuantity}</span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between mb-3">
                 <span>Итого:</span>
                 <span className="font-bold text-xl">{total} c</span>
               </div>
+              {total < 500 && items.length > 0 && (
+                <div className="text-xs text-red-500 mb-2">Минимальная сумма доставки 500 c</div>
+              )}
               <button
                 className="w-full bg-pink-500 hover:bg-pink-600 text-white rounded-full py-3 font-bold text-base transition disabled:opacity-70"
-                disabled={items.length === 0}
+                disabled={items.length === 0 || total < 500}
                 onClick={sendOrderToWhatsApp}
               >
                 Оформить заказ
