@@ -4,17 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useCategories } from "@/hooks/useCategories";
-import Image from "next/image";
 
 export default function CategoryNav() {
   const pathname = usePathname();
   const { categories, loading } = useCategories();
 
   const navItems = [
-    { label: "Все", icon: "/cat-full.png", href: "/menu" },
+    { label: "Все", href: "/menu" },
     ...categories.map((cat) => ({
       label: cat.name,
-      icon: cat.image || `/cat-${cat.slug}.png`,
       href: `/menu/${cat.slug}`,
       slug: cat.slug,
     })),
@@ -41,13 +39,12 @@ export default function CategoryNav() {
               <li key={`skeleton-${i}`}>
                 <div
                   className={clsx(
-                    "shrink-0 inline-flex items-center gap-2 px-3 sm:px-6 py-2 rounded-full",
+                    "shrink-0 inline-flex items-center px-4 py-2 rounded-full",
                     "bg-white text-gray-300 border border-gray-200 animate-pulse",
-                    "w-[120px] h-[42px] sm:h-[48px]"
+                    "w-[100px] h-[42px] sm:h-[48px]"
                   )}
                 >
-                  <div className="w-6 h-6 bg-gray-200 rounded-full" />
-                  <span className="w-16 h-4 bg-gray-200 rounded" />
+                  <span className="w-20 h-4 bg-gray-200 rounded" />
                 </div>
               </li>
             ))
@@ -63,7 +60,7 @@ export default function CategoryNav() {
                     href={cat.href}
                     scroll={false}
                     className={clsx(
-                      "shrink-0 inline-flex items-center gap-2 px-3 sm:px-6 py-2 rounded-full transition-all duration-150",
+                      "shrink-0 inline-flex items-center px-4 sm:px-6 py-2 rounded-full transition-all duration-150",
                       "whitespace-nowrap select-none text-[15px] sm:text-base md:text-lg font-medium",
                       isActive
                         ? "bg-pink-500 text-white shadow font-semibold ring-2 ring-pink-400"
@@ -73,13 +70,6 @@ export default function CategoryNav() {
                     tabIndex={0}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    <Image
-                      src={cat.icon}
-                      alt={cat.label}
-                      width={28}
-                      height={28}
-                      className="w-6 h-6 md:w-7 md:h-7 object-contain"
-                    />
                     <span className="truncate">{cat.label}</span>
 
                     {isActive && (
