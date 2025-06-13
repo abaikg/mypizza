@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useCart } from "@/hooks/useCart";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +11,6 @@ import {
   ShoppingBag,
   ShoppingCart,
 } from "lucide-react";
-import { useEffect } from "react";
 import CartItemOptions from "@/components/Cart/CartItemOptions";
 import Image from "next/image";
 
@@ -26,12 +26,20 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const decrement = useCart((state) => state.decrementItem);
   const clear = useCart((state) => state.clearCart);
 
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [payment, setPayment] = useState<"qr" | "cash">("qr");
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
   const total = items.reduce(
-    (sum, item) => sum + Number(item.variant.price ?? item.product.price) * item.quantity,
+    (sum, item) =>
+      sum + Number(item.variant.price ?? item.product.price) * item.quantity,
     0
   );
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Закрытие по Esc
   useEffect(() => {
     if (!open) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -39,10 +47,28 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     return () => window.removeEventListener("keydown", esc);
   }, [open, onClose]);
 
-  // Функция для отправки заказа в WhatsApp
-  const sendOrderToWhatsApp = () => {
-    const phone = "996779715638";
+  // Валидация полей
+  const validate = () => {
+    const newErrors: { [key: string]: string } = {};
+    if (!name.trim()) newErrors.name = "Введите имя";
+    if (!phone.trim()) newErrors.phone = "Введите телефон";
+    if (!address.trim()) newErrors.address = "Введите адрес";
+    return newErrors;
+  };
 
+  // Проверка для дизабла кнопки
+  const isFormInvalid =
+    !name.trim() || !phone.trim() || !address.trim() || total < 500;
+
+  // Хэндлер оформления заказа
+  const sendOrderToWhatsApp = () => {
+    setSubmitAttempted(true);
+    const fieldErrors = validate();
+    setErrors(fieldErrors);
+
+    if (Object.keys(fieldErrors).length > 0 || total < 500) return;
+
+    const phoneNumber = "996779715638";
     const message = encodeURIComponent(
       [
         "🧾 *Ваш заказ:*\n",
@@ -51,17 +77,13 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
           const qty = item.quantity;
           const price = Number(item.variant.price ?? item.product.price);
           const totalItemPrice = qty * price;
-
-          // 🔤 Определение emoji по ключевым словам
           const emoji =
             /пицц|маргарита|пеперони/i.test(name) ? "🍕" :
-              /чай|ice|лимонад|cola|пепси|сок/i.test(name) ? "🧃" :
-                /картошка|фри/i.test(name) ? "🍟" :
-                  /бургер/i.test(name) ? "🍔" :
-                    /торт|десерт|мороженое/i.test(name) ? "🍰" :
-                      "🥤";
-
-          // Опции: "Размер: 30 см, Объем: 0.5 л"
+            /чай|ice|лимонад|cola|пепси|сок/i.test(name) ? "🧃" :
+            /картошка|фри/i.test(name) ? "🍟" :
+            /бургер/i.test(name) ? "🍔" :
+            /торт|десерт|мороженое/i.test(name) ? "🍰" :
+            "🥤";
           const options = item.product.options?.map((opt) => {
             const valId = item.options[opt.id];
             const val = item.variant.optionValues.find(
@@ -69,7 +91,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             );
             return val ? `${opt.name}: ${val.value}` : null;
           }).filter(Boolean).join(", ");
-
           return (
             `*${index + 1}. ${emoji} ${name}*\n` +
             `   • Кол-во: ${qty}\n` +
@@ -79,20 +100,33 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
         }),
         "━━━━━━━━━━━━━━━",
         `*💰 Итого: ${total} c*`,
+        `*📦 Всего товаров:* ${totalQuantity}`,
+        "",
+        "━━━━━━━━━━━━━━━",
+        `*👤 Имя:* ${name}`,
+        `*📞 Телефон:* ${phone}`,
+        `*🏠 Адрес доставки:* ${address}`,
+        `*💳 Оплата:* ${payment === "qr" ? "QR-код" : "Наличными"}`,
       ].join("\n\n")
     );
 
-    const url = `https://wa.me/${phone}?text=${message}`;
+    const url = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(url, "_blank");
+
     clear();
     onClose();
+    setSubmitAttempted(false);
+    setErrors({});
+    setName("");
+    setPhone("");
+    setAddress("");
+    setPayment("qr");
   };
 
   return (
     <AnimatePresence>
       {open && (
         <>
-          {/* Overlay */}
           <motion.div
             className="fixed inset-0 bg-black/40 z-40 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -101,7 +135,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             transition={{ duration: 0.13 }}
             onClick={onClose}
           />
-          {/* Cart sidebar */}
           <motion.aside
             className="
               fixed right-0 top-0 h-full bg-white z-50 shadow-2xl flex flex-col
@@ -116,13 +149,11 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div
-              className="
+            <div className="
                 flex items-center justify-between p-4 sm:p-5 border-b
                 bg-white/80 backdrop-blur sticky top-0 z-10
                 min-h-[60px]
-              "
-            >
+              ">
               <div className="flex items-center gap-2 font-bold text-xl sm:text-2xl">
                 <ShoppingBag className="w-7 h-7 text-pink-500" /> Корзина
               </div>
@@ -169,7 +200,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                         }}
                         className="flex gap-3 sm:gap-4 border-b pb-4 last:border-none last:pb-0 group"
                       >
-                        {/* КРАСИВЫЙ КВАДРАТНЫЙ БЛОК ПОД КАРТИНКУ */}
+                        {/* Image */}
                         <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50 shadow">
                           <Image
                             src={item.product.image}
@@ -180,8 +211,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             quality={80}
                           />
                         </div>
-
-                        {/* Основной контент */}
+                        {/* Content */}
                         <div className="flex-1 flex flex-col justify-between">
                           <div>
                             <div className="font-semibold text-base">
@@ -215,7 +245,8 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                         </div>
                         <div className="flex flex-col items-end justify-between">
                           <div className="font-bold text-base">
-                            {Number(item.variant.price ?? item.product.price) * item.quantity} c
+                            {Number(item.variant.price ?? item.product.price) *
+                              item.quantity} c
                           </div>
                           <button
                             onClick={() => removeItem(item.id)}
@@ -234,17 +265,84 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
             {/* Footer */}
             <div className="p-4 sm:p-5 border-t bg-white/90 backdrop-blur sticky bottom-0 z-10">
+              {items.length > 0 && (
+                <>
+                  <div className="space-y-3 mb-4">
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Ваше имя"
+                        value={name}
+                        onChange={e => setName(e.target.value)}
+                        className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.name ? 'border-red-400' : ''}`}
+                      />
+                      {submitAttempted && errors.name && (
+                        <div className="text-red-500 text-xs mt-1">{errors.name}</div>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="tel"
+                        placeholder="Телефон"
+                        value={phone}
+                        onChange={e => setPhone(e.target.value)}
+                        className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.phone ? 'border-red-400' : ''}`}
+                      />
+                      {submitAttempted && errors.phone && (
+                        <div className="text-red-500 text-xs mt-1">{errors.phone}</div>
+                      )}
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="Адрес доставки"
+                        value={address}
+                        onChange={e => setAddress(e.target.value)}
+                        className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.address ? 'border-red-400' : ''}`}
+                      />
+                      {submitAttempted && errors.address && (
+                        <div className="text-red-500 text-xs mt-1">{errors.address}</div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPayment("qr")}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium border ${payment === "qr" ? "bg-pink-500 text-white border-pink-500" : "bg-white text-gray-600"}`}
+                      >
+                        QR-код
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPayment("cash")}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium border ${payment === "cash" ? "bg-pink-500 text-white border-pink-500" : "bg-white text-gray-600"}`}
+                      >
+                        Наличные
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
+                    <span>Всего товаров:</span>
+                    <span>{totalQuantity}</span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between mb-3">
                 <span>Итого:</span>
                 <span className="font-bold text-xl">{total} c</span>
               </div>
               <button
                 className="w-full bg-pink-500 hover:bg-pink-600 text-white rounded-full py-3 font-bold text-base transition disabled:opacity-70"
-                disabled={items.length === 0}
+                disabled={items.length === 0 || isFormInvalid}
                 onClick={sendOrderToWhatsApp}
               >
                 Оформить заказ
               </button>
+              {submitAttempted && total < 500 && (
+                <div className="mt-2 text-sm text-red-500 text-center">
+                  Минимальная сумма заказа — 500 сомов
+                </div>
+              )}
               {items.length > 0 && (
                 <button
                   className="mt-2 text-xs text-gray-400 hover:text-pink-500 w-full flex items-center gap-1 justify-center"
