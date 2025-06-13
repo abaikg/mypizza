@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useCart } from "@/hooks/useCart";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -10,7 +11,6 @@ import {
   ShoppingBag,
   ShoppingCart,
 } from "lucide-react";
-import { useEffect } from "react";
 import CartItemOptions from "@/components/Cart/CartItemOptions";
 import Image from "next/image";
 
@@ -26,12 +26,19 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const decrement = useCart((state) => state.decrementItem);
   const clear = useCart((state) => state.clearCart);
 
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [payment, setPayment] = useState<"qr" | "cash">("qr");
+
   const total = items.reduce(
-    (sum, item) => sum + Number(item.variant.price ?? item.product.price) * item.quantity,
+    (sum, item) =>
+      sum + Number(item.variant.price ?? item.product.price) * item.quantity,
     0
   );
 
-  // Закрытие по Esc
+  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
   useEffect(() => {
     if (!open) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -39,51 +46,76 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     return () => window.removeEventListener("keydown", esc);
   }, [open, onClose]);
 
-  // Функция для отправки заказа в WhatsApp
   const sendOrderToWhatsApp = () => {
-    const phone = "996779715638";
+    if (!name || !phone || !address) {
+      alert("\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0437\u0430\u043f\u043e\u043b\u043d\u0438\u0442\u0435 \u0438\u043c\u044f, \u0442\u0435\u043b\u0435\u0444\u043e\u043d \u0438 \u0430\u0434\u0440\u0435\u0441.");
+      return;
+    }
+
+    if (total < 500) {
+      alert("\u041c\u0438\u043d\u0438\u043c\u0430\u043b\u044c\u043d\u0430\u044f \u0441\u0443\u043c\u043c\u0430 \u0437\u0430\u043a\u0430\u0437\u0430 \u2014 500 \u0441\u043e\u043c.");
+      return;
+    }
+
+    const phoneNumber = "996779715638";
 
     const message = encodeURIComponent(
       [
-        "🧾 *Ваш заказ:*\n",
+        "\ud83d\udcdf *\u0412\u0430\u0448 \u0437\u0430\u043a\u0430\u0437:*\n",
         ...items.map((item, index) => {
           const name = item.product.name;
           const qty = item.quantity;
           const price = Number(item.variant.price ?? item.product.price);
           const totalItemPrice = qty * price;
 
-          // 🔤 Определение emoji по ключевым словам
           const emoji =
-            /пицц|маргарита|пеперони/i.test(name) ? "🍕" :
-              /чай|ice|лимонад|cola|пепси|сок/i.test(name) ? "🧃" :
-                /картошка|фри/i.test(name) ? "🍟" :
-                  /бургер/i.test(name) ? "🍔" :
-                    /торт|десерт|мороженое/i.test(name) ? "🍰" :
-                      "🥤";
+            /\u043f\u0438\u0446\u0446|\u043c\u0430\u0440\u0433\u0430\u0440\u0438\u0442\u0430|\u043f\u0435\u043f\u0435\u0440\u043e\u043d\u0438/i.test(name)
+              ? "\ud83c\udf55"
+              : /\u0447\u0430\u0439|ice|\u043b\u0438\u043c\u043e\u043d\u0430\u0434|cola|\u043f\u0435\u043f\u0441\u0438|\u0441\u043e\u043a/i.test(name)
+              ? "\ud83e\udd83"
+              : /\u043a\u0430\u0440\u0442\u043e\u0448\u043a\u0430|\u0444\u0440\u0438/i.test(name)
+              ? "\ud83c\udf5f"
+              : /\u0431\u0443\u0440\u0433\u0435\u0440/i.test(name)
+              ? "\ud83c\udf54"
+              : /\u0442\u043e\u0440\u0442|\u0434\u0435\u0441\u0435\u0440\u0442|\u043c\u043e\u0440\u043e\u0436\u0435\u043d\u043e\u0435/i.test(name)
+              ? "\ud83c\udf70"
+              : "\ud83e\udd64";
 
-          // Опции: "Размер: 30 см, Объем: 0.5 л"
-          const options = item.product.options?.map((opt) => {
-            const valId = item.options[opt.id];
-            const val = item.variant.optionValues.find(
-              (v) => String(v.id) === String(valId)
-            );
-            return val ? `${opt.name}: ${val.value}` : null;
-          }).filter(Boolean).join(", ");
+          const options = item.product.options
+            ?.map((opt) => {
+              const valId = item.options[opt.id];
+              const val = item.variant.optionValues.find(
+                (v) => String(v.id) === String(valId)
+              );
+              return val ? `${opt.name}: ${val.value}` : null;
+            })
+            .filter(Boolean)
+            .join(", ");
 
           return (
             `*${index + 1}. ${emoji} ${name}*\n` +
-            `   • Кол-во: ${qty}\n` +
-            `   • Цена: ${totalItemPrice} c` +
-            (options ? `\n   • Опции: ${options}` : "")
+            `   • \u041a\u043e\u043b-\u0432\u043e: ${qty}\n` +
+            `   • \u0426\u0435\u043d\u0430: ${totalItemPrice} c` +
+            (options ? `\n   • \u041e\u043f\u0446\u0438\u0438: ${options}` : "")
           );
         }),
         "━━━━━━━━━━━━━━━",
-        `*💰 Итого: ${total} c*`,
+        `*\ud83d\udcb0 \u0418\u0442\u043e\u0433\u043e: ${total} c*`,
+        `*\ud83d\udce6 \u0412\u0441\u0435\u0433\u043e \u0442\u043e\u0432\u0430\u0440\u043e\u0432:* ${totalQuantity}`,
+        "",
+        "━━━━━━━━━━━━━━━",
+        `*\ud83d\udc64 \u0418\u043c\u044f:* ${name}`,
+        `*\ud83d\udcde \u0422\u0435\u043b\u0435\u0444\u043e\u043d:* ${phone}`,
+        `*\ud83c\udfe0 \u0410\u0434\u0440\u0435\u0441 \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438:* ${address}`,
+        `*\ud83d\udcb3 \u041e\u043f\u043b\u0430\u0442\u0430:* ${
+          payment === "qr" ? "QR-\u043a\u043e\u0434" : "\u041d\u0430\u043b\u0438\u0447\u043d\u044b\u043c\u0438"
+        }`,
       ].join("\n\n")
     );
 
-    const url = `https://wa.me/${phone}?text=${message}`;
+    const url = `https://wa.me/${phoneNumber}?text=${message}`;
     window.open(url, "_blank");
+
     clear();
     onClose();
   };
@@ -92,7 +124,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     <AnimatePresence>
       {open && (
         <>
-          {/* Overlay */}
           <motion.div
             className="fixed inset-0 bg-black/40 z-40 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -101,14 +132,8 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             transition={{ duration: 0.13 }}
             onClick={onClose}
           />
-          {/* Cart sidebar */}
           <motion.aside
-            className="
-              fixed right-0 top-0 h-full bg-white z-50 shadow-2xl flex flex-col
-              w-full max-w-[95vw] sm:max-w-[430px] md:max-w-md
-              rounded-none md:rounded-l-2xl
-              transition-all font-montserrat
-            "
+            className="fixed right-0 top-0 h-full bg-white z-50 shadow-2xl flex flex-col w-full max-w-[95vw] sm:max-w-[430px] md:max-w-md rounded-none md:rounded-l-2xl transition-all font-montserrat"
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -116,20 +141,15 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div
-              className="
-                flex items-center justify-between p-4 sm:p-5 border-b
-                bg-white/80 backdrop-blur sticky top-0 z-10
-                min-h-[60px]
-              "
-            >
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b bg-white/80 backdrop-blur sticky top-0 z-10 min-h-[60px]">
               <div className="flex items-center gap-2 font-bold text-xl sm:text-2xl">
-                <ShoppingBag className="w-7 h-7 text-pink-500" /> Корзина
+                <ShoppingBag className="w-7 h-7 text-pink-500" />
+                \u041a\u043e\u0440\u0437\u0438\u043d\u0430
               </div>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-pink-500 text-3xl transition"
-                aria-label="Закрыть"
+                aria-label="\u0417\u0430\u043a\u0440\u044b\u0442\u044c"
               >
                 <XCircle className="w-8 h-8" />
               </button>
@@ -149,7 +169,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                   >
                     <ShoppingCart className="w-16 h-16 text-gray-200 mb-4" />
                     <div className="text-gray-400 text-center text-base sm:text-lg font-semibold">
-                      Корзина пуста
+                      \u041a\u043e\u0440\u0437\u0438\u043d\u0430 \u043f\u0443\u0441\u0442\u0430
                     </div>
                   </motion.div>
                 ) : (
@@ -169,7 +189,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                         }}
                         className="flex gap-3 sm:gap-4 border-b pb-4 last:border-none last:pb-0 group"
                       >
-                        {/* КРАСИВЫЙ КВАДРАТНЫЙ БЛОК ПОД КАРТИНКУ */}
                         <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50 shadow">
                           <Image
                             src={item.product.image}
@@ -180,8 +199,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             quality={80}
                           />
                         </div>
-
-                        {/* Основной контент */}
                         <div className="flex-1 flex flex-col justify-between">
                           <div>
                             <div className="font-semibold text-base">
@@ -197,7 +214,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             <button
                               className="px-2 py-1 bg-pink-100 text-pink-600 rounded-xl hover:bg-pink-200 transition"
                               onClick={() => decrement(item.id)}
-                              aria-label="Уменьшить количество"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
@@ -207,7 +223,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             <button
                               className="px-2 py-1 bg-pink-100 text-pink-600 rounded-xl hover:bg-pink-200 transition"
                               onClick={() => increment(item.id)}
-                              aria-label="Увеличить количество"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -220,7 +235,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                           <button
                             onClick={() => removeItem(item.id)}
                             className="text-xs text-red-400 hover:text-red-600 mt-2 transition flex items-center gap-1 group-hover:scale-110"
-                            aria-label="Удалить товар"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -234,23 +248,79 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
             {/* Footer */}
             <div className="p-4 sm:p-5 border-t bg-white/90 backdrop-blur sticky bottom-0 z-10">
+              {items.length > 0 && (
+                <>
+                  <div className="space-y-3 mb-4">
+                    <input
+                      type="text"
+                      placeholder="\u0412\u0430\u0448\u0435 \u0438\u043c\u044f"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="\u0422\u0435\u043b\u0435\u0444\u043e\u043d"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
+                    />
+                    <input
+                      type="text"
+                      placeholder="\u0410\u0434\u0440\u0435\u0441 \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPayment("qr")}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium border ${
+                          payment === "qr"
+                            ? "bg-pink-500 text-white border-pink-500"
+                            : "bg-white text-gray-600"
+                        }`}
+                      >
+                        QR-\u043a\u043e\u0434
+                      </button>
+                      <button
+                        onClick={() => setPayment("cash")}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium border ${
+                          payment === "cash"
+                            ? "bg-pink-500 text-white border-pink-500"
+                            : "bg-white text-gray-600"
+                        }`}
+                      >
+                        \u041d\u0430\u043b\u0438\u0447\u043d\u044b\u0435
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
+                    <span>\u0412\u0441\u0435\u0433\u043e \u0442\u043e\u0432\u0430\u0440\u043e\u0432:</span>
+                    <span>{totalQuantity}</span>
+                  </div>
+                </>
+              )}
               <div className="flex items-center justify-between mb-3">
-                <span>Итого:</span>
+                <span>\u0418\u0442\u043e\u0433\u043e:</span>
                 <span className="font-bold text-xl">{total} c</span>
               </div>
+              {total < 500 && items.length > 0 && (
+                <div className="text-xs text-red-500 mb-2">\u041c\u0438\u043d\u0438\u043c\u0430\u043b\u044c\u043d\u0430\u044f \u0441\u0443\u043c\u043c\u0430 \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438 500 c</div>
+              )}
               <button
                 className="w-full bg-pink-500 hover:bg-pink-600 text-white rounded-full py-3 font-bold text-base transition disabled:opacity-70"
-                disabled={items.length === 0}
+                disabled={items.length === 0 || total < 500}
                 onClick={sendOrderToWhatsApp}
               >
-                Оформить заказ
+                \u041e\u0444\u043e\u0440\u043c\u0438\u0442\u044c \u0437\u0430\u043a\u0430\u0437
               </button>
               {items.length > 0 && (
                 <button
                   className="mt-2 text-xs text-gray-400 hover:text-pink-500 w-full flex items-center gap-1 justify-center"
                   onClick={clear}
                 >
-                  <Trash2 className="w-4 h-4" /> Очистить корзину
+                  <Trash2 className="w-4 h-4" /> \u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u043a\u043e\u0440\u0437\u0438\u043d\u0443
                 </button>
               )}
             </div>
