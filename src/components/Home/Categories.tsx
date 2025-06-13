@@ -27,35 +27,27 @@ export default function Categories() {
         Категории
       </h2>
       <div
-        className="
-          flex overflow-x-auto scrollbar-hide pb-2
-          gap-2 xs:gap-3 sm:gap-4 md:gap-6
-          snap-x snap-mandatory
-        "
+        className="flex overflow-x-auto scrollbar-hide pb-3 gap-4 xs:gap-5 sm:gap-6 snap-x snap-mandatory"
         style={{ touchAction: "pan-x" }}
       >
         {categories.map((cat) => (
           <Link
             key={cat.slug}
             href={`/menu/${cat.slug}`}
-            className="
-              shrink-0 bg-white rounded-2xl 
-              px-4 xs:px-5 py-3 xs:py-4 flex flex-col items-center 
-              gap-1 xs:gap-2 shadow-sm hover:shadow-md
-              hover:bg-pink-50 transition
-              min-w-[92px] xs:min-w-[110px] sm:min-w-[124px] max-w-[140px]
-              snap-start select-none
-              hover:scale-[1.04] active:scale-[0.97] transition-transform
-            "
+            className="shrink-0 flex flex-col items-center gap-2 snap-start select-none hover:scale-105 active:scale-95 transition-transform"
           >
-            <Image
-              src={cat.image || `/cat-${cat.slug}.png`}
-              alt={cat.name}
-              width={56}
-              height={56}
-              className="w-10 h-10 xs:w-12 sm:w-14 xs:h-14 object-contain"
-            />
-            <span className="text-xs xs:text-base font-semibold text-gray-900 text-center truncate max-w-[90px]">
+            <div className="p-0.5 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 shadow-md">
+              <div className="w-14 h-14 xs:w-16 xs:h-16 rounded-full bg-white flex items-center justify-center">
+                <Image
+                  src={cat.image || `/cat-${cat.slug}.png`}
+                  alt={cat.name}
+                  width={56}
+                  height={56}
+                  className="w-8 h-8 xs:w-10 xs:h-10 object-contain"
+                />
+              </div>
+            </div>
+            <span className="text-sm xs:text-base font-semibold text-gray-800 text-center truncate max-w-[90px]">
               {cat.name}
             </span>
           </Link>
