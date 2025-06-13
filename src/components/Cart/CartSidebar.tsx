@@ -48,12 +48,12 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
   const sendOrderToWhatsApp = () => {
     if (!name || !phone || !address) {
-      alert("\u041f\u043e\u0436\u0430\u043b\u0443\u0439\u0441\u0442\u0430, \u0437\u0430\u043f\u043e\u043b\u043d\u0438\u0442\u0435 \u0438\u043c\u044f, \u0442\u0435\u043b\u0435\u0444\u043e\u043d \u0438 \u0430\u0434\u0440\u0435\u0441.");
+      alert("Пожалуйста, заполните имя, телефон и адрес.");
       return;
     }
 
     if (total < 500) {
-      alert("\u041c\u0438\u043d\u0438\u043c\u0430\u043b\u044c\u043d\u0430\u044f \u0441\u0443\u043c\u043c\u0430 \u0437\u0430\u043a\u0430\u0437\u0430 \u2014 500 \u0441\u043e\u043c.");
+      alert("Минимальная сумма заказа — 500 сом.");
       return;
     }
 
@@ -61,7 +61,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
     const message = encodeURIComponent(
       [
-        "\ud83d\udcdf *\u0412\u0430\u0448 \u0437\u0430\u043a\u0430\u0437:*\n",
+        "🧾 *Ваш заказ:*\n",
         ...items.map((item, index) => {
           const name = item.product.name;
           const qty = item.quantity;
@@ -69,17 +69,17 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
           const totalItemPrice = qty * price;
 
           const emoji =
-            /\u043f\u0438\u0446\u0446|\u043c\u0430\u0440\u0433\u0430\u0440\u0438\u0442\u0430|\u043f\u0435\u043f\u0435\u0440\u043e\u043d\u0438/i.test(name)
-              ? "\ud83c\udf55"
-              : /\u0447\u0430\u0439|ice|\u043b\u0438\u043c\u043e\u043d\u0430\u0434|cola|\u043f\u0435\u043f\u0441\u0438|\u0441\u043e\u043a/i.test(name)
-              ? "\ud83e\udd83"
-              : /\u043a\u0430\u0440\u0442\u043e\u0448\u043a\u0430|\u0444\u0440\u0438/i.test(name)
-              ? "\ud83c\udf5f"
-              : /\u0431\u0443\u0440\u0433\u0435\u0440/i.test(name)
-              ? "\ud83c\udf54"
-              : /\u0442\u043e\u0440\u0442|\u0434\u0435\u0441\u0435\u0440\u0442|\u043c\u043e\u0440\u043e\u0436\u0435\u043d\u043e\u0435/i.test(name)
-              ? "\ud83c\udf70"
-              : "\ud83e\udd64";
+            /пицц|маргарита|пеперони/i.test(name)
+              ? "🍕"
+              : /чай|ice|лимонад|cola|пепси|сок/i.test(name)
+              ? "🧃"
+              : /картошка|фри/i.test(name)
+              ? "🍟"
+              : /бургер/i.test(name)
+              ? "🍔"
+              : /торт|десерт|мороженое/i.test(name)
+              ? "🍰"
+              : "🥤";
 
           const options = item.product.options
             ?.map((opt) => {
@@ -94,21 +94,21 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
           return (
             `*${index + 1}. ${emoji} ${name}*\n` +
-            `   • \u041a\u043e\u043b-\u0432\u043e: ${qty}\n` +
-            `   • \u0426\u0435\u043d\u0430: ${totalItemPrice} c` +
-            (options ? `\n   • \u041e\u043f\u0446\u0438\u0438: ${options}` : "")
+            `   • Кол-во: ${qty}\n` +
+            `   • Цена: ${totalItemPrice} c` +
+            (options ? `\n   • Опции: ${options}` : "")
           );
         }),
         "━━━━━━━━━━━━━━━",
-        `*\ud83d\udcb0 \u0418\u0442\u043e\u0433\u043e: ${total} c*`,
-        `*\ud83d\udce6 \u0412\u0441\u0435\u0433\u043e \u0442\u043e\u0432\u0430\u0440\u043e\u0432:* ${totalQuantity}`,
+        `*💰 Итого: ${total} c*`,
+        `*📦 Всего товаров:* ${totalQuantity}`,
         "",
         "━━━━━━━━━━━━━━━",
-        `*\ud83d\udc64 \u0418\u043c\u044f:* ${name}`,
-        `*\ud83d\udcde \u0422\u0435\u043b\u0435\u0444\u043e\u043d:* ${phone}`,
-        `*\ud83c\udfe0 \u0410\u0434\u0440\u0435\u0441 \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438:* ${address}`,
-        `*\ud83d\udcb3 \u041e\u043f\u043b\u0430\u0442\u0430:* ${
-          payment === "qr" ? "QR-\u043a\u043e\u0434" : "\u041d\u0430\u043b\u0438\u0447\u043d\u044b\u043c\u0438"
+        `*👤 Имя:* ${name}`,
+        `*📞 Телефон:* ${phone}`,
+        `*🏠 Адрес доставки:* ${address}`,
+        `*💳 Оплата:* ${
+          payment === "qr" ? "QR-код" : "Наличными"
         }`,
       ].join("\n\n")
     );
@@ -144,12 +144,12 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             <div className="flex items-center justify-between p-4 sm:p-5 border-b bg-white/80 backdrop-blur sticky top-0 z-10 min-h-[60px]">
               <div className="flex items-center gap-2 font-bold text-xl sm:text-2xl">
                 <ShoppingBag className="w-7 h-7 text-pink-500" />
-                \u041a\u043e\u0440\u0437\u0438\u043d\u0430
+                Корзина
               </div>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-pink-500 text-3xl transition"
-                aria-label="\u0417\u0430\u043a\u0440\u044b\u0442\u044c"
+                aria-label="Закрыть"
               >
                 <XCircle className="w-8 h-8" />
               </button>
@@ -169,7 +169,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                   >
                     <ShoppingCart className="w-16 h-16 text-gray-200 mb-4" />
                     <div className="text-gray-400 text-center text-base sm:text-lg font-semibold">
-                      \u041a\u043e\u0440\u0437\u0438\u043d\u0430 \u043f\u0443\u0441\u0442\u0430
+                      Корзина пуста
                     </div>
                   </motion.div>
                 ) : (
@@ -253,21 +253,21 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                   <div className="space-y-3 mb-4">
                     <input
                       type="text"
-                      placeholder="\u0412\u0430\u0448\u0435 \u0438\u043c\u044f"
+                      placeholder="Ваше имя"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
                     />
                     <input
                       type="tel"
-                      placeholder="\u0422\u0435\u043b\u0435\u0444\u043e\u043d"
+                      placeholder="Телефон"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
                     />
                     <input
                       type="text"
-                      placeholder="\u0410\u0434\u0440\u0435\u0441 \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438"
+                      placeholder="Адрес доставки"
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       className="w-full px-4 py-2 border rounded-xl text-sm outline-pink-400"
@@ -281,7 +281,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             : "bg-white text-gray-600"
                         }`}
                       >
-                        QR-\u043a\u043e\u0434
+                        QR-код
                       </button>
                       <button
                         onClick={() => setPayment("cash")}
@@ -291,36 +291,36 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                             : "bg-white text-gray-600"
                         }`}
                       >
-                        \u041d\u0430\u043b\u0438\u0447\u043d\u044b\u0435
+                        Наличные
                       </button>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-sm text-gray-500 mb-1">
-                    <span>\u0412\u0441\u0435\u0433\u043e \u0442\u043e\u0432\u0430\u0440\u043e\u0432:</span>
+                    <span>Всего товаров:</span>
                     <span>{totalQuantity}</span>
                   </div>
                 </>
               )}
               <div className="flex items-center justify-between mb-3">
-                <span>\u0418\u0442\u043e\u0433\u043e:</span>
+                <span>Итого:</span>
                 <span className="font-bold text-xl">{total} c</span>
               </div>
               {total < 500 && items.length > 0 && (
-                <div className="text-xs text-red-500 mb-2">\u041c\u0438\u043d\u0438\u043c\u0430\u043b\u044c\u043d\u0430\u044f \u0441\u0443\u043c\u043c\u0430 \u0434\u043e\u0441\u0442\u0430\u0432\u043a\u0438 500 c</div>
+                <div className="text-xs text-red-500 mb-2">Минимальная сумма доставки 500 c</div>
               )}
               <button
                 className="w-full bg-pink-500 hover:bg-pink-600 text-white rounded-full py-3 font-bold text-base transition disabled:opacity-70"
                 disabled={items.length === 0 || total < 500}
                 onClick={sendOrderToWhatsApp}
               >
-                \u041e\u0444\u043e\u0440\u043c\u0438\u0442\u044c \u0437\u0430\u043a\u0430\u0437
+                Оформить заказ
               </button>
               {items.length > 0 && (
                 <button
                   className="mt-2 text-xs text-gray-400 hover:text-pink-500 w-full flex items-center gap-1 justify-center"
                   onClick={clear}
                 >
-                  <Trash2 className="w-4 h-4" /> \u041e\u0447\u0438\u0441\u0442\u0438\u0442\u044c \u043a\u043e\u0440\u0437\u0438\u043d\u0443
+                  <Trash2 className="w-4 h-4" /> Очистить корзину
                 </button>
               )}
             </div>
