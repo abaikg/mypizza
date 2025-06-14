@@ -58,10 +58,8 @@ export default function Featured() {
               : Number(product.price);
 
           // Ссылка на страницу продукта или на категорию
-          const catSlug =
-            typeof product.category === "object" && product.category !== null && "slug" in product.category
-              ? (product.category as { slug: string }).slug
-              : categories.find((cat) => cat.id === product.category)?.slug;
+          // Категория приходит как slug, поэтому просто используем его
+          const catSlug = product.category;
 
           return (
             <div
