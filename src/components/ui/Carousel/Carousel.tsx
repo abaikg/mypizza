@@ -47,13 +47,15 @@ export default function Carousel({
     slider.on("updated", nextTimeout);
   };
 
+  const plugins = autoplay ? [autoplayPlugin] : [];
+
   const [sliderRef, instanceRef] = useKeenSlider<HTMLDivElement>(
     {
       loop: true,
       slides: { origin: "center", perView: 1 },
       renderMode: "performance",
     },
-    [autoplay && autoplayPlugin]
+    plugins
   );
 
   return (
