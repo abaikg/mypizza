@@ -61,8 +61,8 @@ export default function Carousel({
   return (
     <div className="relative">
       <div ref={sliderRef} className={`keen-slider ${className}`}>{children}</div>
-      <Controls instanceRef={instanceRef} />
-      <Dots instanceRef={instanceRef} />
+      <Controls instanceRef={instanceRef.current} />
+      <Dots instanceRef={instanceRef.current} />
     </div>
   );
 }
