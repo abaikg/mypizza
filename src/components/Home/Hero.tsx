@@ -28,9 +28,9 @@ const slides: SlideData[] = [
     href: "/menu/rolls",
   },
   {
-    title: "Бесплатная доставка от 1000 c",
+    title: "Бесплатная доставка от 500 c",
     text: "Собери корзину и сэкономь на доставке",
-    image: "/cat-drinks.png",
+    image: "/mbank.png",
     cta: "К меню",
     href: "/menu",
   },
@@ -39,7 +39,7 @@ const slides: SlideData[] = [
 export default function Hero() {
   return (
     <section className="max-w-[1400px] mx-auto px-3 xs:px-4 sm:px-6 md:px-10 xl:px-20">
-      <Carousel className="rounded-3xl shadow overflow-hidden">
+      <Carousel className="rounded-3xl ">
         {slides.map((slide) => (
           <Slide key={slide.title} className="">
             <div
@@ -47,32 +47,31 @@ export default function Hero() {
                 relative w-full overflow-hidden
                 flex flex-col-reverse lg:flex-row
                 items-start lg:items-center
-                gap-6 lg:gap-10
+                gap-6 lg:gap-10 pl-3 xs:pl-4 sm:pl-6 md:pl-10 xl:pl-20
                 pt-6 xs:pt-8 sm:pt-12 md:pt-24
                 pb-6 xs:pb-8 sm:pb-12
                 text-left lg:text-left
-                bg-gradient-to-br from-yellow-50 via-pink-50 to-white
               "
             >
               <Image
                 src="/tomato.png"
                 alt=""
-                width={120}
-                height={120}
+                width={150}
+                height={150}
                 className="absolute -top-6 -left-6 w-24 opacity-40 select-none"
                 aria-hidden="true"
               />
               <Image
-                src="/leaf.png"
+                src="/tomato.png"
                 alt=""
                 width={100}
                 height={100}
-                className="absolute bottom-0 right-0 w-20 opacity-50 select-none"
+                className="absolute bottom-0 right-0 w-20  select-none"
                 aria-hidden="true"
               />
               <div className="flex-1 w-full flex flex-col items-start px-3">
                 <h1
-                  className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 xs:mb-4 sm:mb-6 text-pink-500 leading-tight w-full max-w-[420px]"
+                  className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 xs:mb-4 sm:mb-6 text-pink-500 leading-tight w-full max-w-[450px]"
                 >
                   {slide.title}
                 </h1>
