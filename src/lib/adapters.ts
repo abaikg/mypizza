@@ -75,7 +75,7 @@ function adaptVariant(variant: ProductVariantRaw): ProductVariant {
       ? variant.option_values.map((v) => ({
           id: String(v.id),
           value: v.value,
-          optionId: String(v.option_id ?? v.option_id ?? ""),
+          optionId: String(v.option_id ?? ""),
         }))
       : [],
   };
