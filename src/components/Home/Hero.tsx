@@ -38,7 +38,7 @@ const slides: SlideData[] = [
 
 export default function Hero() {
   return (
-    <section className="max-w-[1400px] mx-auto px-3 xs:px-4 sm:px-6 md:px-10 xl:px-20">
+    <section className="max-w-[1400px] mx-auto mt-20px px-3 xs:px-4 sm:px-6 md:px-10 xl:px-20">
       <Carousel className="rounded-3xl ">
         {slides.map((slide) => (
           <Slide key={slide.title} className="">
@@ -53,22 +53,6 @@ export default function Hero() {
                 text-left lg:text-left
               "
             >
-              <Image
-                src="/tomato.png"
-                alt=""
-                width={150}
-                height={150}
-                className="absolute -top-6 -left-6 w-24 opacity-40 select-none"
-                aria-hidden="true"
-              />
-              <Image
-                src="/tomato.png"
-                alt=""
-                width={100}
-                height={100}
-                className="absolute bottom-0 right-0 w-20  select-none"
-                aria-hidden="true"
-              />
               <div className="flex-1 w-full flex flex-col items-start px-3">
                 <h1
                   className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-extrabold mb-2 xs:mb-4 sm:mb-6 text-pink-500 leading-tight w-full max-w-[450px]"
