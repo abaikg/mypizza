@@ -6,7 +6,7 @@ import CartItemOptions from "@/components/Cart/CartItemOptions";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2, Plus, Minus, XCircle, ShoppingBag, ShoppingCart, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
-import { createOrderItems, createOrder } from "@/lib/strapi-order";
+import { createOrder, createOrderItemsWithOrderId } from "@/lib/strapi-order";
 
 interface CartSidebarProps {
   open: boolean;
@@ -20,7 +20,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const decrement = useCart((state) => state.decrementItem);
   const clear = useCart((state) => state.clearCart);
 
-  // UI state
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -30,17 +29,15 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Для автоочистки "спасибо" после успешного заказа
+  // Для сброса "Спасибо" через 7 сек
   const successTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Суммы и количества
   const total = items.reduce(
     (sum, item) => sum + Number(item.variant.price ?? item.product.price) * item.quantity,
     0
   );
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  // Закрытие по Esc
   useEffect(() => {
     if (!open) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -48,7 +45,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     return () => window.removeEventListener("keydown", esc);
   }, [open, onClose]);
 
-  // Сброс успеха после 7 сек или при новом заказе
   useEffect(() => {
     if (success) {
       successTimer.current = setTimeout(() => setSuccess(false), 7000);
@@ -58,7 +54,10 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     }
   }, [success]);
 
-  // Валидация
+  useEffect(() => {
+    if (!open) setSuccess(false);
+  }, [open]);
+
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
     if (!name.trim()) newErrors.name = "Введите имя";
@@ -69,7 +68,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
   const isFormInvalid = !name.trim() || !phone.trim() || !address.trim() || total < 500;
 
-  // Отправка заказа
   const handleOrder = async () => {
     setSubmitAttempted(true);
     setSuccess(false);
@@ -79,25 +77,24 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     if (Object.keys(fieldErrors).length > 0 || total < 500) return;
     setLoading(true);
     try {
-      // 1. Создаём позиции заказа
-      const cartItemsForStrapi = items.map(item => ({
-        productId: Number(item.product.id),
-        quantity: item.quantity,
-        price: Number(item.variant.price ?? item.product.price),
-        options: item.options,
-      }));
-      const orderItemIds = await createOrderItems(cartItemsForStrapi);
-
-      // 2. Заказ
-      await createOrder({
+      // 1. Создаём заказ
+      const orderId = await createOrder({
         customer_name: name,
         phone,
         address,
         payment_type: payment,
         total,
         order_status: "pending",
-        order_items: orderItemIds,
       });
+
+      // 2. Создаём все позиции заказа с привязкой к заказу
+      const cartItemsForStrapi = items.map(item => ({
+        productId: Number(item.product.id),
+        quantity: item.quantity,
+        price: Number(item.variant.price ?? item.product.price),
+        options: item.options,
+      }));
+      await createOrderItemsWithOrderId(cartItemsForStrapi, orderId);
 
       setSuccess(true);
       clear();
@@ -112,11 +109,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
       setLoading(false);
     }
   };
-
-  // Сброс успеха при ручном закрытии сайдбара
-  useEffect(() => {
-    if (!open) setSuccess(false);
-  }, [open]);
 
   return (
     <AnimatePresence>
