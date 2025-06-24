@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/hooks/useCart";
 import CartItemOptions from "@/components/Cart/CartItemOptions";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +20,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const decrement = useCart((state) => state.decrementItem);
   const clear = useCart((state) => state.clearCart);
 
-  // UX state
+  // UI state
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -30,16 +30,33 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  const total = items.reduce((sum, item) =>
-    sum + Number(item.variant.price ?? item.product.price) * item.quantity, 0);
+  // Для автоочистки "спасибо" после успешного заказа
+  const successTimer = useRef<NodeJS.Timeout | null>(null);
+
+  // Суммы и количества
+  const total = items.reduce(
+    (sum, item) => sum + Number(item.variant.price ?? item.product.price) * item.quantity,
+    0
+  );
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
+  // Закрытие по Esc
   useEffect(() => {
     if (!open) return;
     const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [open, onClose]);
+
+  // Сброс успеха после 7 сек или при новом заказе
+  useEffect(() => {
+    if (success) {
+      successTimer.current = setTimeout(() => setSuccess(false), 7000);
+      return () => {
+        if (successTimer.current) clearTimeout(successTimer.current);
+      };
+    }
+  }, [success]);
 
   // Валидация
   const validate = () => {
@@ -50,38 +67,38 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     return newErrors;
   };
 
-  // Кнопка оформления недоступна, если...
-  const isFormInvalid =
-    !name.trim() || !phone.trim() || !address.trim() || total < 500;
+  const isFormInvalid = !name.trim() || !phone.trim() || !address.trim() || total < 500;
 
   // Отправка заказа
   const handleOrder = async () => {
     setSubmitAttempted(true);
     setSuccess(false);
+    setErrors({});
     const fieldErrors = validate();
     setErrors(fieldErrors);
     if (Object.keys(fieldErrors).length > 0 || total < 500) return;
     setLoading(true);
     try {
-      // 1. Order Items
+      // 1. Создаём позиции заказа
       const cartItemsForStrapi = items.map(item => ({
-        productId: item.product.id,
+        productId: Number(item.product.id),
         quantity: item.quantity,
         price: Number(item.variant.price ?? item.product.price),
         options: item.options,
       }));
       const orderItemIds = await createOrderItems(cartItemsForStrapi);
 
-      // 2. Order
+      // 2. Заказ
       await createOrder({
         customer_name: name,
         phone,
         address,
-        payment_type: payment,           // payment === "qr" или "cash"
+        payment_type: payment,
         total,
-        order_status: "pending",         // Именно "pending", не "pending_order"
+        order_status: "pending",
         order_items: orderItemIds,
       });
+
       setSuccess(true);
       clear();
       setName("");
@@ -89,15 +106,17 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
       setAddress("");
       setPayment("qr");
       setSubmitAttempted(false);
-      setTimeout(onClose, 5000);
-      // Можно вызвать onClose() через 2 секунды, если нужно закрывать сайдбар автоматически
-      // setTimeout(onClose, 2000);
-    } catch {
-      setErrors({ submit: "Не удалось отправить заказ. Попробуйте позже." });
+    } catch (err: any) {
+      setErrors({ submit: err?.message || "Не удалось отправить заказ. Попробуйте позже." });
     } finally {
       setLoading(false);
     }
   };
+
+  // Сброс успеха при ручном закрытии сайдбара
+  useEffect(() => {
+    if (!open) setSuccess(false);
+  }, [open]);
 
   return (
     <AnimatePresence>
@@ -145,115 +164,116 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             </div>
             {/* Content */}
             <div className="p-4 sm:p-5 flex-1 overflow-y-auto">
-              {success ? (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 40 }}
-                  transition={{ duration: 0.18 }}
-                  className="flex flex-col items-center justify-center mt-14 gap-3 text-center"
-                >
-                  <CheckCircle2 className="w-16 h-16 text-pink-500 mb-4" />
-                  <div className="text-xl font-bold text-pink-500 mb-2">
-                    Спасибо за заказ!
-                  </div>
-                  <div className="text-gray-700 text-base font-semibold">
-                    Ваш заказ принят и находится в обработке.
-                  </div>
-                  <div className="text-gray-500 text-sm mt-1">
-                    Наш менеджер свяжется с вами в ближайшее время.
-                  </div>
-                </motion.div>
-              ) : items.length === 0 ? (
-                <motion.div
-                  key="empty"
-                  className="flex flex-col items-center justify-center mt-12 gap-3"
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 30 }}
-                  transition={{ duration: 0.18 }}
-                >
-                  <ShoppingCart className="w-16 h-16 text-gray-200 mb-4" />
-                  <div className="text-gray-400 text-center text-base sm:text-lg font-semibold">
-                    Корзина пуста
-                  </div>
-                </motion.div>
-              ) : (
-                <ul className="space-y-5">
-                  {items.map((item) => (
-                    <motion.li
-                      layout
-                      key={item.id}
-                      initial={{ opacity: 0, y: 30, scale: 0.98 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 340,
-                        damping: 22,
-                        mass: 0.9,
-                      }}
-                      className="flex gap-3 sm:gap-4 border-b pb-4 last:border-none last:pb-0 group"
-                    >
-                      <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50 shadow">
-                        <Image
-                          src={item.product.image}
-                          alt={item.product.name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                          quality={80}
-                        />
-                      </div>
-                      <div className="flex-1 flex flex-col justify-between">
-                        <div>
-                          <div className="font-semibold text-base">
-                            {item.product.name}
-                          </div>
-                          <CartItemOptions
-                            product={item.product}
-                            variant={item.variant}
-                            options={item.options}
+              <AnimatePresence mode="wait">
+                {success ? (
+                  <motion.div
+                    key="success"
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 40 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex flex-col items-center justify-center mt-14 gap-3 text-center"
+                  >
+                    <CheckCircle2 className="w-16 h-16 text-pink-500 mb-4" />
+                    <div className="text-xl font-bold text-pink-500 mb-2">
+                      Спасибо за заказ!
+                    </div>
+                    <div className="text-gray-700 text-base font-semibold">
+                      Ваш заказ принят и находится в обработке.
+                    </div>
+                    <div className="text-gray-500 text-sm mt-1">
+                      Наш менеджер свяжется с вами в ближайшее время.
+                    </div>
+                  </motion.div>
+                ) : items.length === 0 ? (
+                  <motion.div
+                    key="empty"
+                    className="flex flex-col items-center justify-center mt-12 gap-3"
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 30 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    <ShoppingCart className="w-16 h-16 text-gray-200 mb-4" />
+                    <div className="text-gray-400 text-center text-base sm:text-lg font-semibold">
+                      Корзина пуста
+                    </div>
+                  </motion.div>
+                ) : (
+                  <ul className="space-y-5">
+                    {items.map((item) => (
+                      <motion.li
+                        layout
+                        key={item.id}
+                        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 340,
+                          damping: 22,
+                          mass: 0.9,
+                        }}
+                        className="flex gap-3 sm:gap-4 border-b pb-4 last:border-none last:pb-0 group"
+                      >
+                        <div className="relative w-16 h-16 flex-shrink-0 rounded-xl overflow-hidden bg-gray-50 shadow">
+                          <Image
+                            src={item.product.image}
+                            alt={item.product.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                            quality={80}
                           />
                         </div>
-                        <div className="flex items-center gap-2 mt-2">
+                        <div className="flex-1 flex flex-col justify-between">
+                          <div>
+                            <div className="font-semibold text-base">
+                              {item.product.name}
+                            </div>
+                            <CartItemOptions
+                              product={item.product}
+                              variant={item.variant}
+                              options={item.options}
+                            />
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <button
+                              className="px-2 py-1 bg-pink-100 text-pink-600 rounded-xl hover:bg-pink-200 transition"
+                              onClick={() => decrement(item.id)}
+                              aria-label="Уменьшить количество"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <span className="w-8 text-center font-semibold text-pink-600 select-none">
+                              {item.quantity}
+                            </span>
+                            <button
+                              className="px-2 py-1 bg-pink-100 text-pink-600 rounded-xl hover:bg-pink-200 transition"
+                              onClick={() => increment(item.id)}
+                              aria-label="Увеличить количество"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end justify-between">
+                          <div className="font-bold text-base">
+                            {Number(item.variant.price ?? item.product.price) * item.quantity} c
+                          </div>
                           <button
-                            className="px-2 py-1 bg-pink-100 text-pink-600 rounded-xl hover:bg-pink-200 transition"
-                            onClick={() => decrement(item.id)}
-                            aria-label="Уменьшить количество"
+                            onClick={() => removeItem(item.id)}
+                            className="text-xs text-red-400 hover:text-red-600 mt-2 transition flex items-center gap-1 group-hover:scale-110"
+                            aria-label="Удалить товар"
                           >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <span className="w-8 text-center font-semibold text-pink-600 select-none">
-                            {item.quantity}
-                          </span>
-                          <button
-                            className="px-2 py-1 bg-pink-100 text-pink-600 rounded-xl hover:bg-pink-200 transition"
-                            onClick={() => increment(item.id)}
-                            aria-label="Увеличить количество"
-                          >
-                            <Plus className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                      </div>
-                      <div className="flex flex-col items-end justify-between">
-                        <div className="font-bold text-base">
-                          {Number(item.variant.price ?? item.product.price) *
-                            item.quantity} c
-                        </div>
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="text-xs text-red-400 hover:text-red-600 mt-2 transition flex items-center gap-1 group-hover:scale-110"
-                          aria-label="Удалить товар"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </motion.li>
-                  ))}
-                </ul>
-              )}
+                      </motion.li>
+                    ))}
+                  </ul>
+                )}
+              </AnimatePresence>
             </div>
             {/* Footer */}
             {!success && (
