@@ -1,12 +1,22 @@
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/hooks/useCart";
 import CartItemOptions from "@/components/Cart/CartItemOptions";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2, Plus, Minus, XCircle, ShoppingBag, ShoppingCart, CheckCircle2 } from "lucide-react";
+import {
+  Trash2,
+  Plus,
+  Minus,
+  XCircle,
+  ShoppingBag,
+  ShoppingCart,
+  CheckCircle2,
+} from "lucide-react";
 import Image from "next/image";
-import { createOrder, createOrderItemsWithOrderId } from "@/lib/strapi-order";
+import {
+  createOrder,
+  createOrderItemsWithOrderId,
+} from "@/lib/strapi-order";
 
 interface CartSidebarProps {
   open: boolean;
@@ -29,7 +39,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Для сброса "Спасибо" через 7 сек
+  // Success сбрасывается через 7 сек
   const successTimer = useRef<NodeJS.Timeout | null>(null);
 
   const total = items.reduce(
@@ -78,7 +88,7 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     setLoading(true);
     try {
       // 1. Создаём заказ
-      const orderId = await createOrder({
+      const orderRes = await createOrder({
         customer_name: name,
         phone,
         address,
@@ -86,9 +96,10 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
         total,
         order_status: "pending",
       });
+      const orderId = orderRes.data.id;
 
-      // 2. Создаём все позиции заказа с привязкой к заказу
-      const cartItemsForStrapi = items.map(item => ({
+      // 2. Создаём позиции заказа
+      const cartItemsForStrapi = items.map((item) => ({
         productId: Number(item.product.id),
         quantity: item.quantity,
         price: Number(item.variant.price ?? item.product.price),
@@ -104,7 +115,9 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
       setPayment("qr");
       setSubmitAttempted(false);
     } catch (err: any) {
-      setErrors({ submit: err?.message || "Не удалось отправить заказ. Попробуйте позже." });
+      setErrors({
+        submit: err?.message || "Не удалось отправить заказ. Попробуйте позже.",
+      });
     } finally {
       setLoading(false);
     }
@@ -114,7 +127,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
     <AnimatePresence>
       {open && (
         <>
-          {/* Overlay */}
           <motion.div
             className="fixed inset-0 bg-black/40 z-40 backdrop-blur-[1.5px]"
             initial={{ opacity: 0 }}
@@ -123,7 +135,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
             transition={{ duration: 0.13 }}
             onClick={onClose}
           />
-          {/* Cart sidebar */}
           <motion.aside
             className="
               fixed right-0 top-0 h-full bg-white z-50 shadow-2xl flex flex-col
@@ -278,8 +289,9 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                           type="text"
                           placeholder="Ваше имя"
                           value={name}
-                          onChange={e => setName(e.target.value)}
-                          className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.name ? 'border-red-400' : ''}`}
+                          onChange={(e) => setName(e.target.value)}
+                          className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.name ? "border-red-400" : ""
+                            }`}
                         />
                         {submitAttempted && errors.name && (
                           <div className="text-red-500 text-xs mt-1">{errors.name}</div>
@@ -290,8 +302,9 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                           type="tel"
                           placeholder="Телефон"
                           value={phone}
-                          onChange={e => setPhone(e.target.value)}
-                          className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.phone ? 'border-red-400' : ''}`}
+                          onChange={(e) => setPhone(e.target.value)}
+                          className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.phone ? "border-red-400" : ""
+                            }`}
                         />
                         {submitAttempted && errors.phone && (
                           <div className="text-red-500 text-xs mt-1">{errors.phone}</div>
@@ -302,8 +315,9 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                           type="text"
                           placeholder="Адрес доставки"
                           value={address}
-                          onChange={e => setAddress(e.target.value)}
-                          className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.address ? 'border-red-400' : ''}`}
+                          onChange={(e) => setAddress(e.target.value)}
+                          className={`w-full px-4 py-2 border rounded-xl text-sm outline-pink-400 ${submitAttempted && errors.address ? "border-red-400" : ""
+                            }`}
                         />
                         {submitAttempted && errors.address && (
                           <div className="text-red-500 text-xs mt-1">{errors.address}</div>
@@ -313,14 +327,20 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
                         <button
                           type="button"
                           onClick={() => setPayment("qr")}
-                          className={`flex-1 py-2 rounded-xl text-sm font-medium border ${payment === "qr" ? "bg-pink-500 text-white border-pink-500" : "bg-white text-gray-600"}`}
+                          className={`flex-1 py-2 rounded-xl text-sm font-medium border ${payment === "qr"
+                            ? "bg-pink-500 text-white border-pink-500"
+                            : "bg-white text-gray-600"
+                            }`}
                         >
                           QR-код
                         </button>
                         <button
                           type="button"
                           onClick={() => setPayment("cash")}
-                          className={`flex-1 py-2 rounded-xl text-sm font-medium border ${payment === "cash" ? "bg-pink-500 text-white border-pink-500" : "bg-white text-gray-600"}`}
+                          className={`flex-1 py-2 rounded-xl text-sm font-medium border ${payment === "cash"
+                            ? "bg-pink-500 text-white border-pink-500"
+                            : "bg-white text-gray-600"
+                            }`}
                         >
                           Наличные
                         </button>
