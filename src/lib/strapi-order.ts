@@ -14,9 +14,11 @@ export interface CreateOrderRequest {
   order_status?: string;
 }
 
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "https://supportive-connection-48c9c03e13.strapiapp.com/api";
+const STRAPI_URL =
+  process.env.NEXT_PUBLIC_STRAPI_URL ||
+  "https://supportive-connection-48c9c03e13.strapiapp.com/api";
 
-// 1. Создать заказ и получить его id
+// 1. Создаём заказ и получаем id
 export async function createOrder(order: CreateOrderRequest) {
   const res = await fetch(`${STRAPI_URL}/orders`, {
     method: "POST",
@@ -27,7 +29,7 @@ export async function createOrder(order: CreateOrderRequest) {
   return await res.json();
 }
 
-// 2. Создать все позиции заказа и связать их с заказом
+// 2. Создаём все позиции заказа (orderId — число, product — число)
 export async function createOrderItemsWithOrderId(
   items: OrderItemRequest[],
   orderId: number
@@ -39,11 +41,11 @@ export async function createOrderItemsWithOrderId(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         data: {
-          product: item.productId,   // <--- id продукта!
+          product: item.productId,
           quantity: item.quantity,
           price: item.price,
           options: item.options,
-          order: orderId,            // <--- id заказа! (ВАЖНО!)
+          order: orderId,
         },
       }),
     });
@@ -52,4 +54,16 @@ export async function createOrderItemsWithOrderId(
     else throw new Error("Ошибка создания позиции заказа: " + JSON.stringify(json));
   }
   return ids;
+}
+
+// 3. После создания всех order-items — вызываем notify
+export async function notifyTelegram(orderId: number) {
+  // Рекомендуется через отдельный API-роут Next.js, например /api/notify-tg
+  const res = await fetch("https://my-tg-bot-production-82e3.up.railway.app/api/notify-tg", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ model: "order", entry: { id: orderId } }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return await res.json();
 }

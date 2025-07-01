@@ -16,6 +16,7 @@ import Image from "next/image";
 import {
   createOrder,
   createOrderItemsWithOrderId,
+  notifyTelegram,
 } from "@/lib/strapi-order";
 
 interface CartSidebarProps {
@@ -78,50 +79,53 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
   const isFormInvalid = !name.trim() || !phone.trim() || !address.trim() || total < 500;
 
-  const handleOrder = async () => {
-    setSubmitAttempted(true);
-    setSuccess(false);
-    setErrors({});
-    const fieldErrors = validate();
-    setErrors(fieldErrors);
-    if (Object.keys(fieldErrors).length > 0 || total < 500) return;
-    setLoading(true);
-    try {
-      // 1. Создаём заказ
-      const orderRes = await createOrder({
-        customer_name: name,
-        phone,
-        address,
-        payment_type: payment,
-        total,
-        order_status: "pending",
-      });
-      const orderId = orderRes.data.id;
+const handleOrder = async () => {
+  setSubmitAttempted(true);
+  setSuccess(false);
+  setErrors({});
+  const fieldErrors = validate();
+  setErrors(fieldErrors);
+  if (Object.keys(fieldErrors).length > 0 || total < 500) return;
+  setLoading(true);
+  try {
+    // 1. Создаём заказ
+    const orderRes = await createOrder({
+      customer_name: name,
+      phone,
+      address,
+      payment_type: payment,
+      total,
+      order_status: "pending",
+    });
+    const orderId = orderRes.data.id;
 
-      // 2. Создаём позиции заказа
-      const cartItemsForStrapi = items.map((item) => ({
-        productId: Number(item.product.id),
-        quantity: item.quantity,
-        price: Number(item.variant.price ?? item.product.price),
-        options: item.options,
-      }));
-      await createOrderItemsWithOrderId(cartItemsForStrapi, orderId);
+    // 2. Создаём позиции заказа
+    const cartItemsForStrapi = items.map((item) => ({
+      productId: Number(item.product.id),
+      quantity: item.quantity,
+      price: Number(item.variant.price ?? item.product.price),
+      options: item.options,
+    }));
+    await createOrderItemsWithOrderId(cartItemsForStrapi, orderId);
 
-      setSuccess(true);
-      clear();
-      setName("");
-      setPhone("");
-      setAddress("");
-      setPayment("qr");
-      setSubmitAttempted(false);
-    } catch (err: any) {
-      setErrors({
-        submit: err?.message || "Не удалось отправить заказ. Попробуйте позже.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    // 3. Уведомляем Telegram через API
+    await notifyTelegram(orderId);
+
+    setSuccess(true);
+    clear();
+    setName("");
+    setPhone("");
+    setAddress("");
+    setPayment("qr");
+    setSubmitAttempted(false);
+  } catch (err: any) {
+    setErrors({
+      submit: err?.message || "Не удалось отправить заказ. Попробуйте позже.",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <AnimatePresence>
