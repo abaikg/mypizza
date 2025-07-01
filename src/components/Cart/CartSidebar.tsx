@@ -3,21 +3,10 @@ import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/hooks/useCart";
 import CartItemOptions from "@/components/Cart/CartItemOptions";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Trash2,
-  Plus,
-  Minus,
-  XCircle,
-  ShoppingBag,
-  ShoppingCart,
-  CheckCircle2,
-} from "lucide-react";
+import { Trash2, Plus, Minus, XCircle, ShoppingBag, ShoppingCart, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
-import {
-  createOrder,
-  createOrderItemsWithOrderId,
-  notifyTelegram,
-} from "@/lib/strapi-order";
+import { createOrderWithCart } from "@/lib/strapi-order";
+import type { OrderItemInput } from "@/types/order";
 
 interface CartSidebarProps {
   open: boolean;
@@ -40,7 +29,6 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Success сбрасывается через 7 сек
   const successTimer = useRef<NodeJS.Timeout | null>(null);
 
   const total = items.reduce(
@@ -79,54 +67,52 @@ export default function CartSidebar({ open, onClose }: CartSidebarProps) {
 
   const isFormInvalid = !name.trim() || !phone.trim() || !address.trim() || total < 500;
 
-const handleOrder = async () => {
-  setSubmitAttempted(true);
-  setSuccess(false);
-  setErrors({});
-  const fieldErrors = validate();
-  setErrors(fieldErrors);
-  if (Object.keys(fieldErrors).length > 0 || total < 500) return;
-  setLoading(true);
-  try {
-    // 1. Создаём заказ
-    const orderRes = await createOrder({
-      customer_name: name,
-      phone,
-      address,
-      payment_type: payment,
-      total,
-      order_status: "pending",
-    });
-    const orderId = orderRes.data.id;
+  // --- ВАЖНО! handleOrder — теперь nested create ---
+  const handleOrder = async () => {
+    setSubmitAttempted(true);
+    setSuccess(false);
+    setErrors({});
+    const fieldErrors = validate();
+    setErrors(fieldErrors);
+    if (Object.keys(fieldErrors).length > 0 || total < 500) return;
+    setLoading(true);
+    try {
+      // 1. Преобразуем корзину в формат OrderItemInput[]
+      const order_items: OrderItemInput[] = items.map((item) => ({
+        product: Number(item.product.id),
+        quantity: item.quantity,
+        price: Number(item.variant.price ?? item.product.price),
+        options: item.optionsReadable,
+      }));
 
-    // 2. Создаём позиции заказа
-    const cartItemsForStrapi = items.map((item) => ({
-      productId: Number(item.product.id),
-      quantity: item.quantity,
-      price: Number(item.variant.price ?? item.product.price),
-      options: item.options,
-    }));
-    await createOrderItemsWithOrderId(cartItemsForStrapi, orderId);
+      // 2. Формируем тело заказа (без order_items)
+      const orderData = {
+        customer_name: name,
+        phone,
+        address,
+        payment_type: payment,
+        total,
+        order_status: "pending",
+      };
 
-    // 3. Уведомляем Telegram через API
-    await notifyTelegram(orderId);
+      // 3. Создаём всё через единую функцию
+      await createOrderWithCart(orderData, order_items);
 
-    setSuccess(true);
-    clear();
-    setName("");
-    setPhone("");
-    setAddress("");
-    setPayment("qr");
-    setSubmitAttempted(false);
-  } catch (err: any) {
-    setErrors({
-      submit: err?.message || "Не удалось отправить заказ. Попробуйте позже.",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
-
+      setSuccess(true);
+      clear();
+      setName("");
+      setPhone("");
+      setAddress("");
+      setPayment("qr");
+      setSubmitAttempted(false);
+    } catch (err: any) {
+      setErrors({
+        submit: err?.message || "Не удалось отправить заказ. Попробуйте позже.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <AnimatePresence>
       {open && (

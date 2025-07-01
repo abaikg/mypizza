@@ -9,7 +9,8 @@ export interface CartItem {
   product: Product;
   variant: ProductVariant;
   quantity: number;
-  options: Options;
+  options: Record<string, string>;            // id-id
+  optionsReadable: Record<string, string>
 }
 
 interface CartState {
@@ -92,6 +93,7 @@ export const useCart = create<CartState>()(
                 variant: foundVariant,
                 quantity,
                 options,
+                optionsReadable: {}
               },
             ],
           });
